@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agente de ventas
 
-## Getting Started
+Aplicación web de chat que consulta un catálogo de productos en PostgreSQL y usa Groq para responder preguntas sobre marcas, categorías, precios y disponibilidad.
 
-First, run the development server:
+## Requisitos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 20.9 o posterior y npm.
+- PostgreSQL instalado y en ejecución, o una instancia PostgreSQL accesible.
+- Una clave de API de Groq para usar el chat.
+
+## Configuración desde cero
+
+1. **Obtener el proyecto e instalar dependencias**
+
+   Desde la carpeta del proyecto, ejecuta:
+
+   ```powershell
+   npm ci
+   ```
+
+2. **Crear la base de datos**
+
+   Crea una base de datos PostgreSQL llamada `agente_ia` (o elige otro nombre). Por ejemplo, desde `psql`, con un usuario que tenga permisos:
+
+   ```sql
+   CREATE DATABASE agente_ia;
+   ```
+
+   Asegúrate de que el servicio de PostgreSQL esté iniciado y que el usuario pueda conectarse a esa base.
+
+3. **Configurar las variables de entorno**
+
+   Crea un archivo `.env` en la raíz del proyecto con la URL de conexión y tu clave de Groq:
+
+   ```env
+   DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/agente_ia?schema=public"
+   GROQ_API_KEY="tu_clave_de_groq"
+   ```
+
+   Sustituye `usuario`, `contraseña` y la clave por tus valores. Si la contraseña contiene caracteres reservados de URL, codifícalos (por ejemplo, `@` como `%40`). No compartas ni subas el archivo `.env` al repositorio.
+
+4. **Generar Prisma Client y aplicar las migraciones**
+
+   ```powershell
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+   La migración crea las tablas e índices del catálogo. `migrate deploy` aplica las migraciones existentes; no crea una migración nueva.
+
+5. **Cargar productos de ejemplo**
+
+   ```powershell
+   npx --yes tsx prisma/seed.ts
+   ```
+
+   Este paso es recomendable para probar el agente con productos. El script evita duplicar productos si se ejecuta más de una vez. `npx` descargará `tsx` si no está disponible localmente.
+
+6. **Iniciar la aplicación**
+
+   ```powershell
+   npm run dev
+   ```
+
+   Abre [http://localhost:3000](http://localhost:3000) en el navegador. Escribe, por ejemplo: “¿Tienes una laptop Dell por menos de $700?”.
+
+## Comandos útiles
+
+```powershell
+npm run dev       # Servidor local de desarrollo
+npm run lint      # Revisión de código con ESLint
+npm run build     # Compilación de producción
+npm run start     # Servir la compilación de producción
+npx prisma migrate status  # Consultar el estado de las migraciones
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para producción, configura `DATABASE_URL` y `GROQ_API_KEY` en el entorno de ejecución, aplica las migraciones con `npx prisma migrate deploy` y luego ejecuta `npm run build` y `npm run start`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Solución de problemas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **No se puede conectar a PostgreSQL**: verifica que el servicio esté en ejecución, que el host y puerto de `DATABASE_URL` sean correctos y que la base de datos exista. El puerto predeterminado de PostgreSQL es `5432`.
+- **Error de autenticación de PostgreSQL**: revisa el usuario y la contraseña de la URL; codifica los caracteres reservados de la contraseña.
+- **Error al usar Prisma**: confirma que `.env` esté en la raíz y vuelve a ejecutar `npx prisma generate`.
+- **El chat no responde**: confirma que `GROQ_API_KEY` esté definida y sea válida. Reinicia `npm run dev` después de modificar `.env`.
+- **No aparecen productos**: ejecuta `npx --yes tsx prisma/seed.ts` para cargar los datos de ejemplo.
